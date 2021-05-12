@@ -1,15 +1,35 @@
 Transform: AWS::Serverless-2016-10-31
 Resources:
-  RaiseError:
+  AcuityRouterApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub
+        - ${ResourceName} From Stack ${StackTagName} Environment ${EnvironmentTagName}
+        - ResourceName: AcuityRouterApi
+      StageName: !Ref EnvironmentAPIGatewayStageName
+      DefinitionBody:
+        swagger: '2.0'
+        info: {}
+        paths:
+          /v1/appointment-event:
+            post:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AppointmentEvent.Arn}/invocations
+              responses: {}
+      EndpointConfiguration: REGIONAL
+      TracingEnabled: true
+  AppointmentEvent:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${AWS::StackName}-RaiseError
+      FunctionName: !Sub ${AWS::StackName}-AppointmentEvent
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
-        - ResourceName: RaiseError
+        - ResourceName: AppointmentEvent
       CodeUri: src
-      Handler: misc.raise_error
-      Runtime: python3.7
+      Handler: appointments.appointment_event_api
+      Runtime: python3.8
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
       Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
@@ -20,6 +40,13 @@ Resources:
       Environment:
         Variables:
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+      Events:
+        AcuityRouterApiPOSTv1appointmentevent:
+          Type: Api
+          Properties:
+            Path: /v1/appointment-event
+            Method: POST
+            RestApiId: !Ref AcuityRouterApi
 Parameters:
   StackTagName:
     Type: String
@@ -27,6 +54,9 @@ Parameters:
   EnvironmentTagName:
     Type: String
     Description: Environment Name (injected by Stackery at deployment time)
+  EnvironmentAPIGatewayStageName:
+    Type: String
+    Description: Environment name used for API Gateway Stage names (injected by Stackery at deployment time)
   EnvConfiglambdamemorysizeAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/lambda/memory-size
