@@ -1,0 +1,2 @@
+# Local/test requirements go here
+thiscovery-dev-tools
