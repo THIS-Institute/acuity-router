@@ -1,2 +1,2 @@
 # Local/test requirements go here
-thiscovery-dev-tools
+https://github.com/THIS-Institute/thiscovery-dev-tools/archive/refs/heads/master.zip
