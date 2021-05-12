@@ -1,2 +1,2 @@
-# thiscovery-skeleton
-Template Thiscovery stack
+# acuity-router
+Thiscovery router service for Acuity webhook calls
