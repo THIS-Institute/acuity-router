@@ -18,6 +18,7 @@
 import datetime
 import json
 import re
+import thiscovery_lib.eb_utilities as eb
 import thiscovery_lib.utilities as utils
 
 from collections import ChainMap
@@ -37,7 +38,6 @@ class AcuityEvent:
         self.logger = logger
         if logger is None:
             self.logger = utils.get_logger()
-        self.core_api_client = CoreApiClient(correlation_id=correlation_id)
         self.correlation_id = correlation_id
 
         event_pattern = re.compile(
@@ -77,11 +77,10 @@ class AcuityEvent:
 
     def process(self):
         """
-        Returns: Tuple containing:
-            storing_result,
-            thiscovery_team_notification_result,
-            participant_and_researchers_notification_results
+        Converts incoming Acuity event to an EventBridge event and
+        puts it in the local thiscovery-event-bus
         """
+
         pass
         # if self.event_type == 'scheduled':
         #     return self._process_booking()
@@ -94,14 +93,25 @@ class AcuityEvent:
 
 
 @utils.lambda_wrapper
+def process_appointment_event(event, context):
+    pass
+
+
+@utils.lambda_wrapper
 @utils.api_error_handler
-def acuity_appointment_api(event, context):
+def appointment_event_api(event, context):
     """
-    Listens to events posted by Acuity via webhooks
+    Listens to events posted by Acuity via webhooks.
+    Converts incoming events to EventBridge events and
+    puts them in local thiscovery-event-bus
     """
-    logger = event["logger"]
-    correlation_id = event["correlation_id"]
     acuity_event = event["body"]
-    appointment_event = AcuityEvent(acuity_event, logger, correlation_id=correlation_id)
-    result = appointment_event.process()
-    return {"statusCode": HTTPStatus.OK, "body": json.dumps(result)}
+    thiscovery_event = eb.ThiscoveryEvent(
+        {
+            "detail-type": "acuity event",
+            "detail": acuity_event,
+            "event_source": "acuity",
+        }
+    )
+    thiscovery_event.put_event()
+    return {"statusCode": HTTPStatus.OK, "body": ""}
