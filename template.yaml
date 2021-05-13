@@ -55,7 +55,7 @@ Resources:
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
         - ResourceName: ProcessAppointment
       CodeUri: src
-      Handler: appointments.process_appointment
+      Handler: appointments.process_appointment_event
       Runtime: python3.8
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
       Timeout: !Ref EnvConfiglambdatimeoutAsString
