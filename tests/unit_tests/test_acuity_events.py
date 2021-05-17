@@ -15,6 +15,8 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
+import local.dev_config
+import local.secrets
 import copy
 import thiscovery_dev_tools.testing_tools as test_tools
 import unittest
@@ -25,11 +27,13 @@ import src.appointments as app
 import tests.test_data as td
 
 
-
 class TestAcuityEvent(test_tools.BaseTestCase):
+    endpoint_url = "/v1/appointment-event"
 
     def test_appointment_event_api_ok(self):
         result = test_tools.test_post(
             local_method=app.appointment_event_api,
-            aws_url=
+            aws_url=self.endpoint_url,
+            request_body=td.EVENT_BODY_WITH_USER_METADATA,
         )
+        self.assertEqual(HTTPStatus.OK, result["statusCode"])

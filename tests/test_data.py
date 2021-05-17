@@ -15,6 +15,9 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
+
+EVENT_BODY_WITH_USER_METADATA = "action=appointment.scheduled&id=503637409&calendarID=4038206&appointmentTypeID=14792299"
+
 td = {
     "test_appointment_id": 399682887,
     "dev_appointment_id": 448161724,
@@ -33,7 +36,6 @@ td = {
     "participant_user_id": "8518c7ed-1df4-45e9-8dc4-d49b57ae0663",
     "event_body": "action=appointment.scheduled&id=399682887&calendarID=4038206&appointmentTypeID=14792299",
     "past_appointment_event_body": "action=appointment.scheduled&id=437321459&calendarID=4038206&appointmentTypeID=14792299",
-    "event_body_with_user_metadata": "action=appointment.scheduled&id=503637409&calendarID=4038206&appointmentTypeID=14792299",
     "cancelled_appointment_id": 446315771,
     "interview_url": "https://meet.myinterview.com/1b879c51-2e29-46ae-bd36-3199860e65f2",
     "project_task_id": "273b420e-09cb-419c-8b57-b393595dba78",

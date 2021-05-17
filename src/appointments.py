@@ -15,22 +15,11 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-import datetime
-import json
 import re
 import thiscovery_lib.eb_utilities as eb
 import thiscovery_lib.utilities as utils
 
-from collections import ChainMap
-from dateutil import parser
 from http import HTTPStatus
-from thiscovery_lib.core_api_utilities import CoreApiClient
-from thiscovery_lib.dynamodb_utilities import Dynamodb
-from thiscovery_lib.emails_api_utilities import EmailsApiClient
-
-from common.acuity_utilities import AcuityClient
-
-# from common.constants import ACUITY_USER_METADATA_INTAKE_FORM_ID, APPOINTMENTS_TABLE, APPOINTMENT_TYPES_TABLE, DEFAULT_TEMPLATES, STACK_NAME
 
 
 class AcuityEvent:
