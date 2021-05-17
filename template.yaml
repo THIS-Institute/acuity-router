@@ -115,7 +115,8 @@ Resources:
                   - thiscovery-afs25
             EventBusName: !Ref EnvConfigeventbridgethiscoveryeventbusAsString
             Targets:
-              - Arn: !Ref EnvConfigeventbridgeafs25thiscoveryeventbusarnAsString
+              - Id: ThiscoveryAfs25ThiscoveryEventBusArn
+                Arn: !Ref EnvConfigeventbridgeafs25thiscoveryeventbusarnAsString
           Metadata:
             StackeryName: ForwardToThiscoveryAfs25
       Environment:
