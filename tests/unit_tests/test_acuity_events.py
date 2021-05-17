@@ -28,7 +28,7 @@ import tests.test_data as td
 
 
 class TestAcuityEvent(test_tools.BaseTestCase):
-    endpoint_url = "/v1/appointment-event"
+    endpoint_url = "v1/appointment-event"
 
     def test_appointment_event_api_ok(self):
         result = test_tools.test_post(

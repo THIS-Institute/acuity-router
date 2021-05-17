@@ -22,6 +22,9 @@ import thiscovery_lib.utilities as utils
 from http import HTTPStatus
 
 
+RAW_ACUITY_EVENT_DETAIL_TYPE = "raw_acuity_event"
+
+
 class AcuityEvent:
     def __init__(self, acuity_event, logger=None, correlation_id=None):
         self.logger = logger
@@ -64,6 +67,33 @@ class AcuityEvent:
     def __repr__(self):
         return str(self.__dict__)
 
+    @classmethod
+    def from_eb_event(cls, event):
+        detail_type = event["detail-type"]
+        assert (
+            detail_type == RAW_ACUITY_EVENT_DETAIL_TYPE
+        ), f"Unexpected detail-type: {detail_type}"
+        task_response = super().from_eb_event(event=event)
+        try:
+            interview_task_id = task_response._detail.pop("interview_task_id")
+        except KeyError:
+            raise utils.DetailedValueError(
+                "Mandatory interview_task_id data not found in user_interview_task event",
+                details={
+                    "event": event,
+                },
+            )
+        return cls(
+            response_id=task_response._response_id,
+            event_time=task_response._event_time,
+            anon_project_specific_user_id=task_response.anon_project_specific_user_id,
+            anon_user_task_id=task_response.anon_user_task_id,
+            detail_type=detail_type,
+            detail=task_response._detail,
+            correlation_id=task_response._correlation_id,
+            interview_task_id=interview_task_id,
+        )
+
     def process(self):
         """
         Converts incoming Acuity event to an EventBridge event and
@@ -97,7 +127,7 @@ def appointment_event_api(event, context):
     acuity_event = event["body"]
     thiscovery_event = eb.ThiscoveryEvent(
         {
-            "detail-type": "acuity event",
+            "detail-type": RAW_ACUITY_EVENT_DETAIL_TYPE,
             "detail": acuity_event,
             "event_source": "acuity",
         }
