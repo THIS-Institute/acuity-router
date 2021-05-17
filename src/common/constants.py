@@ -15,4 +15,7 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
+ROUTING_TABLE = "ForwardingMap"
+RAW_ACUITY_EVENT_DETAIL_TYPE = "raw_acuity_event"
+PROCESSED_ACUITY_EVENT_DETAIL_TYPE = "processed_acuity_event"
 STACK_NAME = "acuity-router"

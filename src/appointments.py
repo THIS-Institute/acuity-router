@@ -23,14 +23,17 @@ from http import HTTPStatus
 from thiscovery_lib.dynamodb_utilities import Dynamodb
 
 from common.acuity_utilities import AcuityClient
-from common.constants import STACK_NAME
-
-
-RAW_ACUITY_EVENT_DETAIL_TYPE = "raw_acuity_event"
+from common.constants import (
+    PROCESSED_ACUITY_EVENT_DETAIL_TYPE,
+    RAW_ACUITY_EVENT_DETAIL_TYPE,
+    ROUTING_TABLE,
+    STACK_NAME,
+)
 
 
 class AcuityEvent:
     def __init__(self, acuity_event, logger=None, correlation_id=None):
+        self.acuity_event_body = acuity_event
         self.logger = logger
         if logger is None:
             self.logger = utils.get_logger()
@@ -84,7 +87,32 @@ class AcuityEvent:
         )
 
     def process(self):
-        ddb_client = Dynamodb(stack_name=STACK_NAME)
+        if self.target_env:
+            ddb_client = Dynamodb(stack_name=STACK_NAME)
+            target_accounts = ddb_client.query(
+                table_name=ROUTING_TABLE,
+                KeyConditionExpression="env = :env",
+                ExpressionAttributeValues={
+                    ":env": self.target_env,
+                },
+            )
+            if not target_accounts:
+                raise utils.ObjectDoesNotExistError(
+                    f"No entries found in {ROUTING_TABLE} for {self.target_env}", dict()
+                )
+            for account in target_accounts:
+                thiscovery_event = eb.ThiscoveryEvent(
+                    {
+                        "detail-type": PROCESSED_ACUITY_EVENT_DETAIL_TYPE,
+                        "detail": {
+                            "body": self.acuity_event_body,
+                            "target_account": account,
+                            "target_environment": self.target_env,
+                        },
+                        "event_source": "acuity",
+                    }
+                )
+                thiscovery_event.put_event()
 
 
 @utils.lambda_wrapper

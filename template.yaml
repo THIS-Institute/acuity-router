@@ -107,8 +107,15 @@ Resources:
           Properties:
             Pattern:
               source:
-                - aws.health
+                - acuity
+              detail-type:
+                - processed_acuity_event
+              detail:
+                target_account:
+                  - thiscovery-afs25
             EventBusName: !Ref EnvConfigeventbridgethiscoveryeventbusAsString
+            Targets:
+              - Arn: !Ref EnvConfigeventbridgeafs25thiscoveryeventbusarnAsString
           Metadata:
             StackeryName: ForwardToThiscoveryAfs25
       Environment:
@@ -118,11 +125,11 @@ Resources:
     Type: AWS::DynamoDB::Table
     Properties:
       AttributeDefinitions:
-        - AttributeName: id
+        - AttributeName: env
           AttributeType: S
       BillingMode: PAY_PER_REQUEST
       KeySchema:
-        - AttributeName: id
+        - AttributeName: env
           KeyType: HASH
       StreamSpecification:
         StreamViewType: NEW_AND_OLD_IMAGES
