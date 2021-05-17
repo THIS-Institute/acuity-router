@@ -34,6 +34,7 @@ Resources:
       Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
       Policies:
+        - AmazonEventBridgeFullAccess
         - AWSXrayWriteOnlyAccess
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
