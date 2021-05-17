@@ -20,6 +20,10 @@ import thiscovery_lib.eb_utilities as eb
 import thiscovery_lib.utilities as utils
 
 from http import HTTPStatus
+from thiscovery_lib.dynamodb_utilities import Dynamodb
+
+from common.acuity_utilities import AcuityClient
+from common.constants import STACK_NAME
 
 
 RAW_ACUITY_EVENT_DETAIL_TYPE = "raw_acuity_event"
@@ -31,6 +35,7 @@ class AcuityEvent:
         if logger is None:
             self.logger = utils.get_logger()
         self.correlation_id = correlation_id
+        self.target_env = None
 
         event_pattern = re.compile(
             r"action=appointment\.(?P<action>scheduled|rescheduled|canceled|changed)"
@@ -38,34 +43,33 @@ class AcuityEvent:
             r"&calendarID=(?P<calendar_id>\d+)"
             r"&appointmentTypeID=(?P<type_id>\d+)"
         )
+
         m = event_pattern.match(acuity_event)
         try:
-            self.event_type = m.group("action")
-            appointment_id = m.group("appointment_id")
-            type_id = m.group("type_id")
+            self.appointment_type_id = m.group("type_id")
         except AttributeError as err:
             self.logger.error(
                 "event_pattern does not match acuity_event",
                 extra={"acuity_event": acuity_event},
             )
             raise
-        self.appointment = AcuityAppointment(
-            appointment_id=appointment_id,
-            logger=self.logger,
-            correlation_id=self.correlation_id,
-        )
-        self.appointment.appointment_type.type_id = type_id
-        try:
-            self.appointment.appointment_type.ddb_load()
-        except utils.ObjectDoesNotExistError:
-            self.logger.error(
-                "Failed to process Acuity event (Appointment type not found in Dynamodb)",
-                extra={"event": acuity_event, "correlation_id": self.correlation_id},
-            )
-            raise
 
-    def __repr__(self):
-        return str(self.__dict__)
+        ac = AcuityClient(correlation_id=self.correlation_id)
+        app_types_dict = {str(x["id"]): x for x in ac.get_appointment_types()}
+        appointment_type_category = app_types_dict[self.appointment_type_id]
+
+        env_pattern = re.compile(r"\{\{(?P<env>.)}}")
+        m = env_pattern.search(appointment_type_category)
+        try:
+            self.target_env = m.group("env")
+        except AttributeError as err:
+            self.logger.info(
+                "Not a thiscovery appointment category. Ignoring",
+                extra={
+                    "acuity_event": acuity_event,
+                    "category": appointment_type_category,
+                },
+            )
 
     @classmethod
     def from_eb_event(cls, event):
@@ -73,47 +77,20 @@ class AcuityEvent:
         assert (
             detail_type == RAW_ACUITY_EVENT_DETAIL_TYPE
         ), f"Unexpected detail-type: {detail_type}"
-        task_response = super().from_eb_event(event=event)
-        try:
-            interview_task_id = task_response._detail.pop("interview_task_id")
-        except KeyError:
-            raise utils.DetailedValueError(
-                "Mandatory interview_task_id data not found in user_interview_task event",
-                details={
-                    "event": event,
-                },
-            )
+        acuity_event = event["detail"]["body"]
         return cls(
-            response_id=task_response._response_id,
-            event_time=task_response._event_time,
-            anon_project_specific_user_id=task_response.anon_project_specific_user_id,
-            anon_user_task_id=task_response.anon_user_task_id,
-            detail_type=detail_type,
-            detail=task_response._detail,
-            correlation_id=task_response._correlation_id,
-            interview_task_id=interview_task_id,
+            acuity_event=acuity_event,
+            correlation_id=event["id"],
         )
 
     def process(self):
-        """
-        Converts incoming Acuity event to an EventBridge event and
-        puts it in the local thiscovery-event-bus
-        """
-
-        pass
-        # if self.event_type == 'scheduled':
-        #     return self._process_booking()
-        # elif self.event_type == 'canceled':
-        #     return self._process_cancellation()
-        # elif self.event_type == 'rescheduled':
-        #     return self._process_rescheduling()
-        # else:
-        #     raise NotImplementedError(f'Processing of a {self.event_type} appointment has not been implemented')
+        ddb_client = Dynamodb(stack_name=STACK_NAME)
 
 
 @utils.lambda_wrapper
 def process_appointment_event(event, context):
-    pass
+    acuity_event = AcuityEvent.from_eb_event(event=event)
+    acuity_event.process()
 
 
 @utils.lambda_wrapper
