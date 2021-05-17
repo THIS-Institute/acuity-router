@@ -72,6 +72,8 @@ Resources:
             Pattern:
               source:
                 - acuity
+              detail-type:
+                - acuity event
             EventBusName: !Ref EnvConfigeventbridgethiscoveryeventbusAsString
           Metadata:
             StackeryName: ProcessAppointment
