@@ -128,7 +128,7 @@ def appointment_event_api(event, context):
     thiscovery_event = eb.ThiscoveryEvent(
         {
             "detail-type": RAW_ACUITY_EVENT_DETAIL_TYPE,
-            "detail": acuity_event,
+            "detail": {"body": acuity_event},
             "event_source": "acuity",
         }
     )
