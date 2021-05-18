@@ -1,6 +1,6 @@
 Transform: AWS::Serverless-2016-10-31
 Resources:
-  ForwardToThiscoveryAfs25:
+  ForwardToThiscoveryAfs25Rule:
     Type: AWS::Events::Rule
     Properties:
       EventBusName: !Ref EnvConfigeventbridgethiscoveryeventbusAsString
