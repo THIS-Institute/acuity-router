@@ -30,6 +30,11 @@ class TestAcuityEventClass(test_tools.BaseTestCase):
         ae = app.AcuityEvent(acuity_event=td.EVENT_BODY_WITH_USER_METADATA)
         self.assertEqual("dev", ae.target_env)
 
+    def test_get_target_accounts_ok(self):
+        ae = app.AcuityEvent(acuity_event=td.EVENT_BODY_WITH_USER_METADATA)
+        expected_results = ["thiscovery-afs25", "engage-dev1"]
+        self.assertCountEqual(expected_results, ae.get_target_accounts())
+
     def test_process_ok(self):
         ae = app.AcuityEvent(acuity_event=td.EVENT_BODY_WITH_USER_METADATA)
         results = ae.process()

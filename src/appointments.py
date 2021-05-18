@@ -90,22 +90,27 @@ class AcuityEvent:
             correlation_id=event["id"],
         )
 
-    def process(self):
-        results = list()
-        if self.target_env:
-            ddb_client = Dynamodb(stack_name=STACK_NAME)
-            target_accounts = ddb_client.query(
+    def get_target_accounts(self):
+        ddb_client = Dynamodb(stack_name=STACK_NAME)
+        target_accounts = [
+            x["account"]
+            for x in ddb_client.query(
                 table_name=ROUTING_TABLE,
                 KeyConditionExpression="env = :env",
                 ExpressionAttributeValues={
                     ":env": self.target_env,
                 },
             )
-            if not target_accounts:
-                raise utils.ObjectDoesNotExistError(
-                    f"No entries found in {ROUTING_TABLE} for {self.target_env}", dict()
-                )
-            for account in target_accounts:
+        ]
+        assert (
+            target_accounts
+        ), f"No entries found in {ROUTING_TABLE} for {self.target_env}"
+        return target_accounts
+
+    def process(self):
+        results = list()
+        if self.target_env:
+            for account in self.get_target_accounts():
                 thiscovery_event = eb.ThiscoveryEvent(
                     {
                         "detail-type": PROCESSED_ACUITY_EVENT_DETAIL_TYPE,
