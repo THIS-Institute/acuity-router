@@ -59,9 +59,13 @@ class AcuityEvent:
 
         ac = AcuityClient(correlation_id=self.correlation_id)
         app_types_dict = {str(x["id"]): x for x in ac.get_appointment_types()}
-        appointment_type_category = app_types_dict[self.appointment_type_id]
+        appointment_type = app_types_dict[self.appointment_type_id]
+        self.logger.debug(
+            f"Appointment type", extra={"appointment_type": appointment_type}
+        )
+        appointment_type_category = appointment_type["category"]
 
-        env_pattern = re.compile(r"\{\{(?P<env>.)}}")
+        env_pattern = re.compile(r"\{\{(?P<env>.+)}}")
         m = env_pattern.search(appointment_type_category)
         try:
             self.target_env = m.group("env")
@@ -87,6 +91,7 @@ class AcuityEvent:
         )
 
     def process(self):
+        results = list()
         if self.target_env:
             ddb_client = Dynamodb(stack_name=STACK_NAME)
             target_accounts = ddb_client.query(
@@ -112,7 +117,9 @@ class AcuityEvent:
                         "event_source": "acuity",
                     }
                 )
-                thiscovery_event.put_event()
+                result = thiscovery_event.put_event()
+                results.append(result["ResponseMetadata"]["HTTPStatusCode"])
+        return results
 
 
 @utils.lambda_wrapper

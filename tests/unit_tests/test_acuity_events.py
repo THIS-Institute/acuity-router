@@ -17,17 +17,27 @@
 #
 import local.dev_config
 import local.secrets
-import copy
 import thiscovery_dev_tools.testing_tools as test_tools
-import unittest
 from http import HTTPStatus
-from thiscovery_lib import utilities as utils
+from pprint import pprint
 
 import src.appointments as app
 import tests.test_data as td
 
 
-class TestAcuityEvent(test_tools.BaseTestCase):
+class TestAcuityEventClass(test_tools.BaseTestCase):
+    def test_init_ok(self):
+        ae = app.AcuityEvent(acuity_event=td.EVENT_BODY_WITH_USER_METADATA)
+        self.assertEqual("dev", ae.target_env)
+
+    def test_process_ok(self):
+        ae = app.AcuityEvent(acuity_event=td.EVENT_BODY_WITH_USER_METADATA)
+        results = ae.process()
+        expected_results = [HTTPStatus.OK, HTTPStatus.OK]
+        self.assertEqual(expected_results, results)
+
+
+class TestAcuityEventApi(test_tools.BaseTestCase):
     endpoint_url = "v1/appointment-event"
 
     def test_appointment_event_api_ok(self):
