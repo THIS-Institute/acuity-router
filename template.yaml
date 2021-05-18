@@ -15,6 +15,51 @@ Resources:
       Targets:
         - Arn: !Ref EnvConfigeventbridgeafs25thiscoveryeventbusarnAsString
           Id: ThiscoveryAfs25ThiscoveryEventBus
+  ForwardToEngageDev1Rule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref EnvConfigeventbridgethiscoveryeventbusAsString
+      EventPattern:
+        source:
+          - acuity
+        detail-type:
+          - processed_acuity_event
+        detail:
+          target_account:
+            - engage-dev1
+      Targets:
+        - Arn: !Ref EnvConfigeventbridgeengagedev1thiscoveryeventbusarnAsString
+          Id: EngageDev1ThiscoveryEventBus
+  ForwardToEngageStagingRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref EnvConfigeventbridgethiscoveryeventbusAsString
+      EventPattern:
+        source:
+          - acuity
+        detail-type:
+          - processed_acuity_event
+        detail:
+          target_account:
+            - engage-staging
+      Targets:
+        - Arn: !Ref EnvConfigeventbridgeengagestagingthiscoveryeventbusarnAsString
+          Id: EngageStagingThiscoveryEventBus
+  ForwardToEngageProdRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref EnvConfigeventbridgethiscoveryeventbusAsString
+      EventPattern:
+        source:
+          - acuity
+        detail-type:
+          - processed_acuity_event
+        detail:
+          target_account:
+            - engage-prod
+      Targets:
+        - Arn: !Ref EnvConfigeventbridgeengageprodthiscoveryeventbusarnAsString
+          Id: EngageProdThiscoveryEventBus
   AcuityRouterApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -138,6 +183,15 @@ Parameters:
   EnvConfigeventbridgeafs25thiscoveryeventbusarnAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/eventbridge/afs25-thiscovery-event-bus-arn
+  EnvConfigeventbridgeengagedev1thiscoveryeventbusarnAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/eventbridge/engage-dev1-thiscovery-event-bus-arn
+  EnvConfigeventbridgeengagestagingthiscoveryeventbusarnAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/eventbridge/engage-staging-thiscovery-event-bus-arn
+  EnvConfigeventbridgeengageprodthiscoveryeventbusarnAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/eventbridge/engage-prod-thiscovery-event-bus-arn
 Metadata:
   EnvConfigParameters:
     EnvConfiglambdamemorysizeAsString: lambda.memory-size
