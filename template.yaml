@@ -131,6 +131,9 @@ Parameters:
   EnvConfigeventbridgethiscoveryeventbusAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/eventbridge/thiscovery-event-bus
+  EnvConfigeventbridgeafs25thiscoveryeventbusarnAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/eventbridge/afs25-thiscovery-event-bus-arn
 Metadata:
   EnvConfigParameters:
     EnvConfiglambdamemorysizeAsString: lambda.memory-size
