@@ -105,10 +105,14 @@ Resources:
       AttributeDefinitions:
         - AttributeName: env
           AttributeType: S
+        - AttributeName: account
+          AttributeType: S
       BillingMode: PAY_PER_REQUEST
       KeySchema:
         - AttributeName: env
           KeyType: HASH
+        - AttributeName: account
+          KeyType: RANGE
       StreamSpecification:
         StreamViewType: NEW_AND_OLD_IMAGES
       TableName: !Sub ${AWS::StackName}-ForwardingMap
