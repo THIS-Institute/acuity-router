@@ -1,25 +1,167 @@
 Transform: AWS::Serverless-2016-10-31
 Resources:
-  RaiseError:
+  ForwardToThiscoveryAfs25Rule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref EnvConfigeventbridgethiscoveryeventbusAsString
+      EventPattern:
+        source:
+          - acuity
+        detail-type:
+          - processed_acuity_event
+        detail:
+          target_account:
+            - thiscovery-afs25
+      Targets:
+        - Arn: !Ref EnvConfigeventbridgeafs25thiscoveryeventbusarnAsString
+          Id: ThiscoveryAfs25ThiscoveryEventBus
+  ForwardToEngageDev1Rule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref EnvConfigeventbridgethiscoveryeventbusAsString
+      EventPattern:
+        source:
+          - acuity
+        detail-type:
+          - processed_acuity_event
+        detail:
+          target_account:
+            - engage-dev1
+      Targets:
+        - Arn: !Ref EnvConfigeventbridgeengagedev1thiscoveryeventbusarnAsString
+          Id: EngageDev1ThiscoveryEventBus
+  ForwardToEngageStagingRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref EnvConfigeventbridgethiscoveryeventbusAsString
+      EventPattern:
+        source:
+          - acuity
+        detail-type:
+          - processed_acuity_event
+        detail:
+          target_account:
+            - engage-staging
+      Targets:
+        - Arn: !Ref EnvConfigeventbridgeengagestagingthiscoveryeventbusarnAsString
+          Id: EngageStagingThiscoveryEventBus
+  ForwardToEngageProdRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref EnvConfigeventbridgethiscoveryeventbusAsString
+      EventPattern:
+        source:
+          - acuity
+        detail-type:
+          - processed_acuity_event
+        detail:
+          target_account:
+            - engage-prod
+      Targets:
+        - Arn: !Ref EnvConfigeventbridgeengageprodthiscoveryeventbusarnAsString
+          Id: EngageProdThiscoveryEventBus
+  AcuityRouterApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub
+        - ${ResourceName} From Stack ${StackTagName} Environment ${EnvironmentTagName}
+        - ResourceName: AcuityRouterApi
+      StageName: !Ref EnvironmentAPIGatewayStageName
+      DefinitionBody:
+        swagger: '2.0'
+        info: {}
+        paths:
+          /v1/appointment-event:
+            post:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AppointmentEvent.Arn}/invocations
+              responses: {}
+      EndpointConfiguration: REGIONAL
+      TracingEnabled: true
+  AppointmentEvent:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${AWS::StackName}-RaiseError
+      FunctionName: !Sub ${AWS::StackName}-AppointmentEvent
       Description: !Sub
         - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
-        - ResourceName: RaiseError
+        - ResourceName: AppointmentEvent
       CodeUri: src
-      Handler: misc.raise_error
-      Runtime: python3.7
+      Handler: appointments.appointment_event_api
+      Runtime: python3.8
       MemorySize: !Ref EnvConfiglambdamemorysizeAsString
       Timeout: !Ref EnvConfiglambdatimeoutAsString
       Tracing: Active
       Policies:
+        - AmazonEventBridgeFullAccess
         - AWSXrayWriteOnlyAccess
         - AWSSecretsManagerGetSecretValuePolicy:
             SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
       Environment:
         Variables:
           SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+      Events:
+        AcuityRouterApiPOSTv1appointmentevent:
+          Type: Api
+          Properties:
+            Path: /v1/appointment-event
+            Method: POST
+            RestApiId: !Ref AcuityRouterApi
+  ProcessAppointment:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-ProcessAppointment
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: ProcessAppointment
+      CodeUri: src
+      Handler: appointments.process_appointment_event
+      Runtime: python3.8
+      MemorySize: !Ref EnvConfiglambdamemorysizeAsString
+      Timeout: !Ref EnvConfiglambdatimeoutAsString
+      Tracing: Active
+      Policies:
+        - AmazonEventBridgeFullAccess
+        - AWSXrayWriteOnlyAccess
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:/${EnvironmentTagName}/*
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ForwardingMap
+      Events:
+        EventRule:
+          Type: EventBridgeRule
+          Properties:
+            Pattern:
+              source:
+                - acuity
+              detail-type:
+                - raw_acuity_event
+            EventBusName: !Ref EnvConfigeventbridgethiscoveryeventbusAsString
+          Metadata:
+            StackeryName: ProcessAppointment
+      Environment:
+        Variables:
+          SECRETS_NAMESPACE: !Sub /${EnvironmentTagName}/
+          TABLE_NAME: !Ref ForwardingMap
+          TABLE_ARN: !GetAtt ForwardingMap.Arn
+  ForwardingMap:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: env
+          AttributeType: S
+        - AttributeName: account
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: env
+          KeyType: HASH
+        - AttributeName: account
+          KeyType: RANGE
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      TableName: !Sub ${AWS::StackName}-ForwardingMap
 Parameters:
   StackTagName:
     Type: String
@@ -27,13 +169,32 @@ Parameters:
   EnvironmentTagName:
     Type: String
     Description: Environment Name (injected by Stackery at deployment time)
+  EnvironmentAPIGatewayStageName:
+    Type: String
+    Description: Environment name used for API Gateway Stage names (injected by Stackery at deployment time)
   EnvConfiglambdamemorysizeAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/lambda/memory-size
   EnvConfiglambdatimeoutAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/lambda/timeout
+  EnvConfigeventbridgethiscoveryeventbusAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/eventbridge/thiscovery-event-bus
+  EnvConfigeventbridgeafs25thiscoveryeventbusarnAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/eventbridge/afs25-thiscovery-event-bus-arn
+  EnvConfigeventbridgeengagedev1thiscoveryeventbusarnAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/eventbridge/engage-dev1-thiscovery-event-bus-arn
+  EnvConfigeventbridgeengagestagingthiscoveryeventbusarnAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/eventbridge/engage-staging-thiscovery-event-bus-arn
+  EnvConfigeventbridgeengageprodthiscoveryeventbusarnAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/eventbridge/engage-prod-thiscovery-event-bus-arn
 Metadata:
   EnvConfigParameters:
     EnvConfiglambdamemorysizeAsString: lambda.memory-size
     EnvConfiglambdatimeoutAsString: lambda.timeout
+    EnvConfigeventbridgethiscoveryeventbusAsString: eventbridge.thiscovery-event-bus

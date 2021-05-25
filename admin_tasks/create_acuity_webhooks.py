@@ -15,7 +15,32 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
-ROUTING_TABLE = "ForwardingMap"
-RAW_ACUITY_EVENT_DETAIL_TYPE = "raw_acuity_event"
-PROCESSED_ACUITY_EVENT_DETAIL_TYPE = "processed_acuity_event"
-STACK_NAME = "acuity-router"
+import local.dev_config
+import local.secrets
+import thiscovery_lib.utilities as utils
+from src.common.acuity_utilities import AcuityClient
+
+
+EVENTS = [
+    "appointment.scheduled",
+    "appointment.rescheduled",
+    "appointment.canceled",
+    # 'appointment.changed',
+]
+
+
+def main():
+    logger = utils.get_logger()
+    ac = AcuityClient()
+    for e in EVENTS:
+        try:
+            response = ac.post_webhooks(
+                e, target=f"{local.dev_config.AWS_TEST_API}v1/appointment-event"
+            )
+            logger.info("Created webhook", extra={"response": response})
+        except utils.DetailedValueError:
+            pass
+
+
+if __name__ == "__main__":
+    main()
