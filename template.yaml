@@ -1,5 +1,20 @@
 Transform: AWS::Serverless-2016-10-31
 Resources:
+  ForwardToStagingRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref EnvConfigeventbridgethiscoveryeventbusAsString
+      EventPattern:
+        source:
+          - acuity
+        detail-type:
+          - processed_acuity_event
+        detail:
+          target_account:
+            - thiscovery-staging
+      Targets:
+        - Arn: !Ref EnvConfigeventbridgestagingthiscoveryeventbusarnAsString
+          Id: StagingThiscoveryEventBus
   ForwardToThiscoveryAfs25Rule:
     Type: AWS::Events::Rule
     Properties:
@@ -181,6 +196,9 @@ Parameters:
   EnvConfigeventbridgethiscoveryeventbusAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/eventbridge/thiscovery-event-bus
+  EnvConfigeventbridgestagingthiscoveryeventbusarnAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/eventbridge/staging-thiscovery-event-bus-arn
   EnvConfigeventbridgeafs25thiscoveryeventbusarnAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/eventbridge/afs25-thiscovery-event-bus-arn

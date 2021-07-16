@@ -130,7 +130,7 @@ class AcuityEvent:
 @utils.lambda_wrapper
 def process_appointment_event(event, context):
     acuity_event = AcuityEvent.from_eb_event(event=event)
-    acuity_event.process()
+    return acuity_event.process()
 
 
 @utils.lambda_wrapper
