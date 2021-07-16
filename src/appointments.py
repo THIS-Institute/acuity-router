@@ -119,7 +119,7 @@ class AcuityEvent:
                             "target_account": account,
                             "target_environment": self.target_env,
                         },
-                        "event_source": "acuity",
+                        "source": "acuity",
                     }
                 )
                 result = thiscovery_event.put_event()
@@ -146,7 +146,7 @@ def appointment_event_api(event, context):
         {
             "detail-type": RAW_ACUITY_EVENT_DETAIL_TYPE,
             "detail": {"body": acuity_event},
-            "event_source": "acuity",
+            "source": "acuity",
         }
     )
     thiscovery_event.put_event()
