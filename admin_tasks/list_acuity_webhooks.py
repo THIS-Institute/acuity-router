@@ -9,6 +9,7 @@ def main():
     return webhooks
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from pprint import pprint
+
     pprint(main())

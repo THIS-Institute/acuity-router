@@ -23,30 +23,30 @@ import thiscovery_lib.utilities as utils
 
 @utils.lambda_wrapper
 def raise_error(event, context):
-    logger = event['logger']
-    correlation_id = event['correlation_id']
+    logger = event["logger"]
+    correlation_id = event["correlation_id"]
 
-    params = event['queryStringParameters']
-    error_id = params['error_id']
-    logger.info('Event info', extra={'error_id': error_id, 'correlation_id': correlation_id, 'event': event})
+    params = event["queryStringParameters"]
+    error_id = params["error_id"]
+    logger.info(
+        "Event info",
+        extra={"error_id": error_id, "correlation_id": correlation_id, "event": event},
+    )
 
-    errorjson = {'error_id': error_id, 'correlation_id': str(correlation_id)}
-    msg = 'no error'
+    errorjson = {"error_id": error_id, "correlation_id": str(correlation_id)}
+    msg = "no error"
 
-    if error_id == '4xx':
-        msg = 'error triggered for testing purposes'
+    if error_id == "4xx":
+        msg = "error triggered for testing purposes"
         raise utils.ObjectDoesNotExistError(msg, errorjson)
-    elif error_id == '5xx':
-        msg = 'error triggered for testing purposes'
+    elif error_id == "5xx":
+        msg = "error triggered for testing purposes"
         raise Exception(msg)
-    elif error_id == 'slow':
-        msg = 'slow response triggered for testing purposes'
+    elif error_id == "slow":
+        msg = "slow response triggered for testing purposes"
         time.sleep(2)  # this should trigger lambda duration alarm
-    elif error_id == 'timeout':
-        msg = 'timeout response triggered for testing purposes'
+    elif error_id == "timeout":
+        msg = "timeout response triggered for testing purposes"
         time.sleep(10)  # this should trigger lambda timeout
 
-    return {
-        "statusCode": HTTPStatus.OK,
-        "body": json.dumps(msg)
-    }
+    return {"statusCode": HTTPStatus.OK, "body": json.dumps(msg)}

@@ -36,21 +36,28 @@ def response_handler(func):
                 return response
         else:
             logger = utils.get_logger()
-            logger.error(f'Acuity API call failed with response: {response}', extra={'response.content': response.content})
-            raise utils.DetailedValueError(f'Acuity API call failed with response: {response}', details={'response': response.content})
+            logger.error(
+                f"Acuity API call failed with response: {response}",
+                extra={"response.content": response.content},
+            )
+            raise utils.DetailedValueError(
+                f"Acuity API call failed with response: {response}",
+                details={"response": response.content},
+            )
+
     return wrapper
 
 
 class AcuityClient:
-    base_url = 'https://acuityscheduling.com/api/v1/'
-    strftime_format_str = '%Y-%m-%d %I:%M%p'
+    base_url = "https://acuityscheduling.com/api/v1/"
+    strftime_format_str = "%Y-%m-%d %I:%M%p"
 
     def __init__(self, correlation_id=None):
-        acuity_credentials = utils.get_secret('acuity-connection')
+        acuity_credentials = utils.get_secret("acuity-connection")
         self.session = requests.Session()
         self.session.auth = (
-            acuity_credentials['user-id'],
-            acuity_credentials['api-key'],
+            acuity_credentials["user-id"],
+            acuity_credentials["api-key"],
         )
         self.logger = utils.get_logger()
         self.calendars = None
@@ -72,11 +79,11 @@ class AcuityClient:
     def post_webhooks(self, appointment_event, target=None):
         if target is None:
             env_name = utils.get_environment_name()
-            if env_name == 'prod':
-                api_base_url = f'https://interviews-api.thiscovery.org'
+            if env_name == "prod":
+                api_base_url = f"https://interviews-api.thiscovery.org"
             else:
-                api_base_url = f'https://{env_name}-interviews-api.thiscovery.org'
-            target = f'{api_base_url}/v1/interview-appointment'
+                api_base_url = f"https://{env_name}-interviews-api.thiscovery.org"
+            target = f"{api_base_url}/v1/interview-appointment"
 
         body_params = {
             "event": appointment_event,
@@ -89,10 +96,13 @@ class AcuityClient:
         response = self.session.get(f"{self.base_url}calendars")
         if response.ok:
             calendars = response.json()
-            self.calendars = {x['id']: x for x in calendars}
+            self.calendars = {x["id"]: x for x in calendars}
             return response.json()
         else:
-            raise utils.DetailedValueError(f'Acuity get calendars call failed with response: {response}', details={})
+            raise utils.DetailedValueError(
+                f"Acuity get calendars call failed with response: {response}",
+                details={},
+            )
 
     def get_calendar_by_id(self, calendar_id):
         if self.calendars is None:
@@ -103,9 +113,7 @@ class AcuityClient:
     def get_blocks(self, calendar_id=None):
         query_parameters = None
         if calendar_id:
-            query_parameters = {
-                'calendarID': int(calendar_id)
-            }
+            query_parameters = {"calendarID": int(calendar_id)}
         return self.session.get(f"{self.base_url}blocks", params=query_parameters)
 
     @response_handler
@@ -135,66 +143,73 @@ class AcuityClient:
             "notes": notes,
         }
         body_json = json.dumps(body_params)
-        self.logger.debug('Acuity API call', extra={
-            'body_params': body_params,
-            'correlation_id': self.correlation_id,
-        })
+        self.logger.debug(
+            "Acuity API call",
+            extra={
+                "body_params": body_params,
+                "correlation_id": self.correlation_id,
+            },
+        )
         response = self.session.post(f"{self.base_url}blocks", data=body_json)
         if response.ok:
             return response.json()
         else:
-            raise utils.DetailedValueError(f'Acuity post block call failed with response: {response.status_code}, {response.text}', details={})
+            raise utils.DetailedValueError(
+                f"Acuity post block call failed with response: {response.status_code}, {response.text}",
+                details={},
+            )
 
     def delete_block(self, block_id):
         response = self.session.delete(f"{self.base_url}blocks/{block_id}")
         if response.ok:
             return response.status_code
         else:
-            error_message = f'Acuity delete block call failed with status code: {response.status_code}'
-            error_dict = {'block_id': block_id}
+            error_message = f"Acuity delete block call failed with status code: {response.status_code}"
+            error_dict = {"block_id": block_id}
             self.logger.error(error_message, extra=error_dict)
             raise utils.DetailedValueError(error_message, details=error_dict)
 
     def reschedule_appointment(self, appointment_id, new_datetime):
         response = self.session.put(
             url=f"{self.base_url}appointments/{appointment_id}/reschedule",
-            data=json.dumps({
-                "datetime": new_datetime.strftime("%Y-%m-%dT%H:%M:%S%Z")
-            })
+            data=json.dumps({"datetime": new_datetime.strftime("%Y-%m-%dT%H:%M:%S%Z")}),
         )
         if response.ok:
             return response.status_code
         else:
-            error_message = f'Acuity call failed with status code: {response.status_code}'
-            error_dict = {'response': response.content}
+            error_message = (
+                f"Acuity call failed with status code: {response.status_code}"
+            )
+            error_dict = {"response": response.content}
             self.logger.error(error_message, extra=error_dict)
             raise utils.DetailedValueError(error_message, details=error_dict)
 
 
 class InvalidBookingHandler:
     """
-        Handles invalid_acuity_booking events posted by the interview system
+    Handles invalid_acuity_booking events posted by the interview system
 
-        Example event (invalid due to null anon_user_task_id):
-            {
-            'detail-type': invalid_acuity_booking,
-            'detail': {
-                'anon_project_specific_user_id': 'f2fac677-cb2c-42a0-9fa6-494059352569',
-                'anon_user_task_id': null,
-                'appointment_type_id': 123456,
-                'appointment_datetime': '2021-01-08T10:15:00+0000',
-                'calendar_name': 'Andre',
-                'calendar_id': 123456,
-                'appointment_type': 'Interview for GPs',
-                'appointment_id': 123456,
-            }
+    Example event (invalid due to null anon_user_task_id):
+        {
+        'detail-type': invalid_acuity_booking,
+        'detail': {
+            'anon_project_specific_user_id': 'f2fac677-cb2c-42a0-9fa6-494059352569',
+            'anon_user_task_id': null,
+            'appointment_type_id': 123456,
+            'appointment_datetime': '2021-01-08T10:15:00+0000',
+            'calendar_name': 'Andre',
+            'calendar_id': 123456,
+            'appointment_type': 'Interview for GPs',
+            'appointment_id': 123456,
+        }
     """
+
     def __init__(self, event):
         self.sns_client = SnsClient()
-        self.detail = SnsClient.dict_to_plaintext_list(event['detail'])
+        self.detail = SnsClient.dict_to_plaintext_list(event["detail"])
 
     def notify_sns_topic(self, message, subject):
-        topic_arn = utils.get_secret('sns-topics')['interview-notifications-arn']
+        topic_arn = utils.get_secret("sns-topics")["interview-notifications-arn"]
         self.sns_client.publish(
             message=message,
             topic_arn=topic_arn,
@@ -204,6 +219,6 @@ class InvalidBookingHandler:
     def main(self):
         self.notify_sns_topic(
             message=f"Invalid Acuity booking received. Please log into Acuity and fix the following appointment:\n\n"
-                    f"{self.detail}",
+            f"{self.detail}",
             subject="Action needed: invalid acuity booking",
         )
