@@ -217,8 +217,8 @@ Parameters:
     Type: String
     Description: Environment Name (injected by Stackery at deployment time)
   EnvironmentAPIGatewayStageName:
-    Type: String
-    Description: Environment name used for API Gateway Stage names (injected by Stackery at deployment time)
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/api-gateway-stage-name
   EnvConfigpddbpointintimerecoveryAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/ddb/point-in-time-recovery
