@@ -32,13 +32,13 @@ class TestAcuityEventClass(test_tools.BaseTestCase):
 
     def test_get_target_accounts_ok(self):
         ae = app.AcuityEvent(acuity_event=td.EVENT_BODY_WITH_USER_METADATA)
-        expected_results = ["thiscovery-afs25", "engage-dev1"]
+        expected_results = ["thiscovery-afs25", "thiscovery-sem86", "engage-dev1"]
         self.assertCountEqual(expected_results, ae.get_target_accounts())
 
     def test_process_ok(self):
         ae = app.AcuityEvent(acuity_event=td.EVENT_BODY_WITH_USER_METADATA)
         results = ae.process()
-        expected_results = [HTTPStatus.OK, HTTPStatus.OK]
+        expected_results = [HTTPStatus.OK]*3
         self.assertEqual(expected_results, results)
 
 
