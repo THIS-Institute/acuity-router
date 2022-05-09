@@ -45,6 +45,21 @@ Resources:
       Targets:
         - Arn: !Ref EnvConfigeventbridgeafs25thiscoveryeventbusarnAsString
           Id: ThiscoveryAfs25ThiscoveryEventBus
+  ForwardToThiscoverySem86Rule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !Ref EnvConfigeventbridgethiscoveryeventbusAsString
+      EventPattern:
+        source:
+          - acuity
+        detail-type:
+          - processed_acuity_event
+        detail:
+          target_account:
+            - thiscovery-sem86
+      Targets:
+        - Arn: !Ref EnvConfigeventbridgesem86thiscoveryeventbusarnAsString
+          Id: ThiscoverySem86ThiscoveryEventBus
   ForwardToEngageDev1Rule:
     Type: AWS::Events::Rule
     Properties:
@@ -202,8 +217,8 @@ Parameters:
     Type: String
     Description: Environment Name (injected by Stackery at deployment time)
   EnvironmentAPIGatewayStageName:
-    Type: String
-    Description: Environment name used for API Gateway Stage names (injected by Stackery at deployment time)
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/api-gateway-stage-name
   EnvConfigpddbpointintimerecoveryAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/ddb/point-in-time-recovery
@@ -225,6 +240,9 @@ Parameters:
   EnvConfigeventbridgeafs25thiscoveryeventbusarnAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/eventbridge/afs25-thiscovery-event-bus-arn
+  EnvConfigeventbridgesem86thiscoveryeventbusarnAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/eventbridge/sem86-thiscovery-event-bus-arn
   EnvConfigeventbridgeengagedev1thiscoveryeventbusarnAsString:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/eventbridge/engage-dev1-thiscovery-event-bus-arn
