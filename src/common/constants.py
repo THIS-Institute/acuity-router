@@ -15,7 +15,26 @@
 #   A copy of the GNU Affero General Public License is available in the
 #   docs folder of this project.  It is also available www.gnu.org/licenses/
 #
+from thiscovery_lib.dynamodb_utilities import DdbBaseTable, DdbBaseItem
+
+
 ROUTING_TABLE = "ForwardingMap"
 RAW_ACUITY_EVENT_DETAIL_TYPE = "raw_acuity_event"
 PROCESSED_ACUITY_EVENT_DETAIL_TYPE = "processed_acuity_event"
 STACK_NAME = "acuity-router"
+
+
+class RoutingTable(DdbBaseTable):
+    name = ROUTING_TABLE
+    partition = "env"
+    sort = "account"
+
+    def __init__(self):
+        super().__init__(stack_name=STACK_NAME)
+
+
+class RoutingTableItem(DdbBaseItem):
+    def __init__(self, env: str, account: str):
+        super().__init__(table=RoutingTable())
+        self.env = env
+        self.account = account
