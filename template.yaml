@@ -111,7 +111,7 @@ Resources:
       Name: !Sub
         - ${ResourceName} From Stack ${StackTagName} Environment ${EnvironmentTagName}
         - ResourceName: AcuityRouterApi
-      StageName: !Ref EnvironmentAPIGatewayStageName
+      StageName: !Ref EnvironmentAPIGatewayStageNameRenamed
       DefinitionBody:
         swagger: '2.0'
         info: {}
@@ -216,7 +216,7 @@ Parameters:
   EnvironmentTagName:
     Type: String
     Description: Environment Name (injected by Stackery at deployment time)
-  EnvironmentAPIGatewayStageName:
+  EnvironmentAPIGatewayStageNameRenamed:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/api-gateway-stage-name
   EnvConfigpddbpointintimerecoveryAsString:
