@@ -19,21 +19,32 @@ import local.dev_config
 import local.secrets
 import thiscovery_dev_tools.testing_tools as test_tools
 from http import HTTPStatus
-from pprint import pprint
 
 import src.appointments as app
+import src.common.constants as const
 import tests.test_data as td
 
 
-class TestAcuityEventClass(test_tools.BaseTestCase):
+DEV_ACCOUNTS = ["thiscovery-afs25", "thiscovery-sem86", "engage-dev1"]
+
+
+class RouterTestCase(test_tools.BaseTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        for acc in DEV_ACCOUNTS:
+            table_item = const.RoutingTableItem(env="dev", account=acc)
+            table_item.put(update=True)
+
+
+class TestAcuityEventClass(RouterTestCase):
     def test_init_ok(self):
         ae = app.AcuityEvent(acuity_event=td.EVENT_BODY_WITH_USER_METADATA)
         self.assertEqual("dev", ae.target_env)
 
     def test_get_target_accounts_ok(self):
         ae = app.AcuityEvent(acuity_event=td.EVENT_BODY_WITH_USER_METADATA)
-        expected_results = ["thiscovery-afs25", "thiscovery-sem86", "engage-dev1"]
-        self.assertCountEqual(expected_results, ae.get_target_accounts())
+        self.assertCountEqual(DEV_ACCOUNTS, ae.get_target_accounts())
 
     def test_process_ok(self):
         ae = app.AcuityEvent(acuity_event=td.EVENT_BODY_WITH_USER_METADATA)
@@ -42,7 +53,7 @@ class TestAcuityEventClass(test_tools.BaseTestCase):
         self.assertEqual(expected_results, results)
 
 
-class TestAcuityEventApi(test_tools.BaseTestCase):
+class TestAcuityEventApi(RouterTestCase):
     endpoint_url = "v1/appointment-event"
 
     def test_appointment_event_api_ok(self):
