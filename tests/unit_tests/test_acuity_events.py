@@ -19,8 +19,6 @@ import local.dev_config
 import local.secrets
 import thiscovery_dev_tools.testing_tools as test_tools
 from http import HTTPStatus
-from pprint import pprint
-from thiscovery_lib.dynamodb_utilities import Dynamodb
 
 import src.appointments as app
 import src.common.constants as const
@@ -46,8 +44,7 @@ class TestAcuityEventClass(RouterTestCase):
 
     def test_get_target_accounts_ok(self):
         ae = app.AcuityEvent(acuity_event=td.EVENT_BODY_WITH_USER_METADATA)
-        expected_results = ["thiscovery-afs25", "thiscovery-sem86", "engage-dev1"]
-        self.assertCountEqual(expected_results, ae.get_target_accounts())
+        self.assertCountEqual(DEV_ACCOUNTS, ae.get_target_accounts())
 
     def test_process_ok(self):
         ae = app.AcuityEvent(acuity_event=td.EVENT_BODY_WITH_USER_METADATA)
